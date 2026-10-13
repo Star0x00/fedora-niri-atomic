@@ -10,7 +10,7 @@ on:
 
 env:
   # published image
-  IMAGE_NAME: ghcr.io/star122013/fedora-niri-atomic
+  IMAGE_NAME: ghcr.io/star0x00/fedora-niri-atomic
   # intermediate, unchunked build kept only in the runner's containers-storage
   BUILD_IMAGE: localhost/fedora-niri-atomic-build
   AUTHFILE: /tmp/ghcr-auth.json

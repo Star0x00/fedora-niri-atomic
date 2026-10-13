@@ -65,6 +65,7 @@
     utils: [
       # package & container management
       "distrobox"
+      "systemd-container"
       # dev toolchain
       "gcc"
       "git"

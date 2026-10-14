@@ -37,7 +37,7 @@ jobs:
       - name: Free disk space
         uses: jlumbroso/free-disk-space@main
         with:
-          tool-cache: true
+          preinstalled-runtimes: true
           swap-storage: true
 
       - name: Log in to ghcr.io

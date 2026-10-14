@@ -141,7 +141,6 @@
   remove: [
     "firefox"
     "firefox-langpacks"
-    "brlapi"
     # base image (fedora-bootc:44) ships nfs-utils and preset-enables
     # nfs-client.target; drop the whole NFS/RPC family since nothing
     # else depends on it (no NFS shares are mounted here).

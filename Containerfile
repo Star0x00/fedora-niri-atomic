@@ -1,6 +1,6 @@
 # vim: set filetype=dockerfile
 # ================================================================
-# Fedora 44 with bootc
+# Fedora 45 with bootc
 # https://bootc.dev/bootc/
 # Philosophy: the image provides hardware support + a working
 # niri session.
@@ -33,7 +33,7 @@
 
 
 # stage 2 make system container
-FROM quay.io/fedora/fedora-bootc:44
+FROM quay.io/fedora/fedora-bootc:45
 
 COPY build /tmp/build
 

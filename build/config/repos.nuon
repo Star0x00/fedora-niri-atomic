@@ -40,14 +40,6 @@
 
   priority_overrides: [
     {
-      file: "_copr:copr.fedorainfracloud.org:bieszczaders:kernel-cachyos-lto.repo"
-      value: 1
-    }
-    {
-      file: "_copr:copr.fedorainfracloud.org:bieszczaders:kernel-cachyos-addons.repo"
-      value: 1
-    }
-    {
       file: "_copr:copr.fedorainfracloud.org:yalter:niri.repo"
       value: 1
     }

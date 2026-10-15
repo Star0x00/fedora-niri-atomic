@@ -22,22 +22,16 @@
     enable_order: ["kernel" "desktop" "utils"]
 
     groups: {
-      kernel: [
-        "bieszczaders/kernel-cachyos-lto"
-        "bieszczaders/kernel-cachyos-addons"
-      ]
+      kernel: []
 
       desktop: [
         "qwerhyy/misc-packages"
         "lionheartp/Hyprland"
         "yalter/niri"
-        "hazel-bunny/ricing"
-        "mineiro/satty"
         "quadratech188/vicinae"
       ]
 
       utils: [
-        "zhullyb/v2rayA"
         "peterwu/rendezvous"
         "jdxcode/mise"
       ]

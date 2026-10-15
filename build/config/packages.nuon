@@ -54,7 +54,6 @@
       # network
       "NetworkManager-wifi"
       "iwlwifi-mvm-firmware"
-      "dae"
       # system daemons
       "upower"
     ]

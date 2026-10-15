@@ -21,9 +21,8 @@ export def append-priority [dry_run: bool, file: string, value: int] {
 }
 
 export def install-rpmfusion [dry_run: bool, repos_cfg] {
-  # The Containerfile bootstrap already installs rpmfusion (with a mirror
-  # fallback for download1.rpmfusion.org). Re-running `dnf install <url>` here
-  # would re-download from download1 and can 403, so skip when present.
+  # The Containerfile bootstrap already installs rpmfusion. Re-running
+  # `dnf install <url>` here would just re-download it, so skip when present.
   if not $dry_run {
     let installed = (^rpm -q rpmfusion-free-release | complete | get exit_code) == 0
     if $installed {

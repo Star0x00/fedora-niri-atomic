@@ -29,15 +29,12 @@ build/
 │   └── system.nuon               # flatpak remote 与 systemd services
 └── scripts/
     ├── build.nu                  # 总入口：串联 repos / packages / system 三个阶段
-    ├── dnf-mirrors.py            # 把按 IP 判定的 Fedora/RPMFusion metalink 展开成 baseurl 列表
     └── lib/
         ├── common.nu             # 通用函数：打印、dry-run、加载配置、dnf helper
         ├── repos.nu              # repo 阶段：rpmfusion / rawhide / terra / copr / priority
         ├── packages.nu           # package 阶段：安装包、删除包、额外 RPM
         └── system.nu             # system 阶段：flatpak、fc-cache、services、bootc lint
 ```
-
-`scripts/dnf-mirrors.py` 在 Containerfile 引导阶段运行（此时 nushell 还没装）。Fedora/RPMFusion 的 mirrorlist 会按客户端 IP 判定，可能返回封禁构建机 IP 的镜像（例如 TUNA），所以脚本把每个 metalink 展开成“全量镜像减去黑名单”的 `baseurl=` 列表，让 dnf 不再依赖出口 IP。它同时从第一个可达镜像下载 RPMFusion release RPM，因为 `download1.rpmfusion.org` 会对部分出口 IP 返回 403。
 
 ---
 

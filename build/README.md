@@ -29,15 +29,12 @@ build/
 │   └── system.nuon               # flatpak remotes and systemd services
 └── scripts/
     ├── build.nu                  # top-level entrypoint: runs repos / packages / system stages
-    ├── dnf-mirrors.py            # expands geo-IP'd Fedora/RPMFusion metalinks into baseurl lists
     └── lib/
         ├── common.nu             # shared helpers: printing, dry-run, config loading, dnf helpers
         ├── repos.nu              # repo stage: rpmfusion / rawhide / terra / copr / priority
         ├── packages.nu           # package stage: packages, removals, extra RPMs
         └── system.nu             # system stage: flatpak, fc-cache, services, bootc lint
 ```
-
-`scripts/dnf-mirrors.py` runs in the Containerfile bootstrap (before nushell exists). Fedora/RPMFusion mirrorlists are geo-IP'd and can hand back a mirror that blocks the build (e.g. TUNA), so the script expands each metalink into the full global mirror set minus blocked hosts and writes it as a list of `baseurl=` entries. It also downloads the RPMFusion release RPMs from the first reachable mirror, since `download1.rpmfusion.org` 403s some egress IPs.
 
 ---
 

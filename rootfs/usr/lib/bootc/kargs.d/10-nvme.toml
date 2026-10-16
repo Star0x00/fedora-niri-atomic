@@ -1,0 +1,4 @@
+# Disable NVMe APST. The KIOXIA EXCERIA PLUS G3 (nvme0, the OS disk) otherwise
+# hits "I/O tag ... timeout, aborting req_op:WRITE" followed by a controller
+# reset, which blocks the root/swap disk for ~90s and freezes the whole session.
+kargs = ["nvme_core.default_ps_max_latency_us=0"]

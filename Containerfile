@@ -33,7 +33,7 @@
 
 
 # stage 2 make system container
-FROM quay.io/fedora/fedora-kinoite:44
+FROM ghcr.io/blue-build/base-images/fedora-kinoite:latest
 
 COPY build /tmp/build
 

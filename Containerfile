@@ -33,7 +33,7 @@
 
 
 # stage 2 make system container
-FROM quay.io/fedora/fedora-kinoite:45
+FROM quay.io/fedora/fedora-kinoite:44
 
 COPY build /tmp/build
 

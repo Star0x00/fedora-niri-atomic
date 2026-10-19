@@ -92,28 +92,17 @@
     # ---------------------------------------------------------------
     desktop: [
       # window managers
-      "hyprland"
-      "umbriel"
       "niri"
-      # display manager
-      "ly"
-      "noctalia-greeter-git"
-      "greetd"
       #theme
       "bibata-cursor-theme"
       "whitesur-gtk-theme"
       "adw-gtk3-theme"
-      "papirus-icon-theme"
-      "papirus-icon-theme-dark"
       # file managers
       "nautilus"
       # desktop portals
       "xdg-desktop-portal"
       "xdg-desktop-portal-gnome"
       "xdg-desktop-portal-gtk"
-      "xdg-desktop-portal-hyprland"
-      "xdg-desktop-portal-umbriel"
-      "gnome-keyring"
       # terminal emulators
       "monstar"
       "ghostty"

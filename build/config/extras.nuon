@@ -1,7 +1,14 @@
 {
   static: []
 
-  github_latest: []
+  github_latest: [
+    {
+      name: "flectar-mail"
+      repo: "flectar/mail"
+      version_prefix_to_strip: "v"
+      url_template: "https://github.com/flectar/mail/releases/download/{tag}/flectar-mail-{version}-linux-x64.rpm"
+    }
+  ]
 
   # fonts downloaded from a direct URL (not RPMs).
   # url can point to a plain .ttf/.otf file OR an archive (.zip / .tar.gz / .tar.xz / .tar.bz2 / .7z);

@@ -86,6 +86,7 @@
       "mpv"
       "playerctl"
       "gtk-murrine-engine"
+      "zsh"
     ]
 
     # ---------------------------------------------------------------
@@ -98,7 +99,7 @@
       "bibata-cursor-theme"
       "colloid-gtk-theme"
       "adw-gtk3-theme"
-      "plasma-union"
+      "gnome-tweaks"
       # file managers
       "nautilus"
       # desktop portals

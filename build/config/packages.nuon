@@ -43,7 +43,6 @@
       "virt-viewer"
       "edk2-ovmf"
       "swtpm"
-      "dnsmasq"
       # audio
       "pipewire"
       "pipewire-utils"
@@ -64,29 +63,19 @@
     utils: [
       # package & container management
       "distrobox"
-      "image-builder"
       "systemd-container"
-      # dev toolchain
-      "gcc"
-      "git"
-      # archives / misc cli
-      "curl"
-      "unzip"
-      "p7zip"
       # graphics / system
       "vulkan-tools"
-      "pciutils"
       "xdg-utils"
       "glibc-langpack-en"
       "mise"
       "pass"
       "zmx"
-      "zathura"
       "go-musicfox"
-      "mpv"
       "playerctl"
       "gtk-murrine-engine"
       "zsh"
+      "flow"
     ]
 
     # ---------------------------------------------------------------
@@ -109,8 +98,6 @@
       # terminal emulators
       "monstar"
       "ghostty"
-      "gram"
-      "flow"
       # screenshot
       "grim"
       "slurp"

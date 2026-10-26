@@ -33,7 +33,7 @@
 
 
 # stage 2 make system container
-FROM ghcr.io/blue-build/base-images/fedora-silverblue:latest
+FROM quay.io/fedora/fedora-kinoite:44
 
 COPY build /tmp/build
 

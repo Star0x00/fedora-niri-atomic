@@ -11,11 +11,14 @@
   services: {
     disable: [
       bootc-fetch-apply-updates.timer
+      # stamp-based workaround; superseded by plasmalogin-shadow-fix.service
+      fedora-kinoite-plasmalogin-workaround.service
     ]
     enable: [
       "bluetooth.service"
       "avahi-daemon.service"
       "fedora-repair-passwd.service"
+      "plasmalogin-shadow-fix.service"
     ]
   }
 }

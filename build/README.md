@@ -364,6 +364,21 @@ Prefer editing:
 - `scripts/lib/*.nu`
 - `scripts/build.nu`
 
+### Shadow entries for image-only accounts
+
+`rootfs/usr/libexec/plasmalogin-shadow-fix` + `rootfs/usr/lib/systemd/system/plasmalogin-shadow-fix.service`
+
+Accounts defined only in `/usr/lib/passwd` (nss-altfiles) have nowhere immutable to keep
+their `/etc/shadow` entry: nss-altfiles covers passwd/group only, and bootc's `/etc`
+merge copies the locally modified `/etc/shadow` wholesale over the new image's copy on
+every upgrade/rebase, dropping entries the new image introduced. `systemd-sysusers` does
+not recreate them (the account already resolves via NSS), so PAM fails with
+`PAM_AUTHINFO_UNAVAIL` — the plasmalogin greeter then cannot start (black screen).
+
+The unit re-adds the entries idempotently on every boot and supersedes Fedora's
+stamp-based `fedora-kinoite-plasmalogin-workaround.service` (masked in `system.nuon`).
+Upstream: https://forge.fedoraproject.org/kde/tracker/issues/684
+
 ---
 
 ## sing-box (manual enable)

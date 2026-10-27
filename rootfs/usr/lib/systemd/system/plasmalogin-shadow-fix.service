@@ -1,0 +1,15 @@
+[Unit]
+Description=Ensure shadow/gshadow entries for image-provided accounts
+Documentation=https://forge.fedoraproject.org/kde/tracker/issues/684
+ConditionPathIsReadWrite=/etc
+After=systemd-sysusers.service
+Before=plasmalogin.service plasma-setup.service
+Conflicts=fedora-kinoite-plasmalogin-workaround.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/plasmalogin-shadow-fix
+
+[Install]
+WantedBy=multi-user.target

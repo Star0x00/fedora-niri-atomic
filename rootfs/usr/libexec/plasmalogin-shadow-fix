@@ -1,0 +1,29 @@
+#!/bin/bash
+# Ensure /etc/shadow and /etc/gshadow have entries for image-provided accounts
+# that only exist in /usr/lib/passwd & /usr/lib/group (nss-altfiles).
+#
+# Why this exists:
+#   nss-altfiles only covers passwd/group (no /usr/lib/shadow), so the shadow
+#   entries of those accounts can only live in the mutable /etc/shadow. During
+#   a deployment upgrade/rebase, bootc's /etc merge copies the locally modified
+#   /etc/shadow wholesale over the new image's copy, dropping entries the new
+#   image added. systemd-sysusers does not recreate them, because the account
+#   already resolves via NSS. PAM then fails with PAM_AUTHINFO_UNAVAIL for those
+#   accounts (e.g. the plasmalogin greeter => black screen).
+#
+# See: https://forge.fedoraproject.org/kde/tracker/issues/684
+#      https://forge.fedoraproject.org/atomic-desktops/tracker/issues/108
+#
+# Unlike Fedora's stamp-based workaround, this unit is idempotent and runs on
+# every boot, so it also covers accounts added by future images.
+set -euo pipefail
+
+for user in plasmalogin plasma-setup; do
+  if ! getent passwd "$user" >/dev/null; then
+    continue
+  fi
+  grep -q "^${user}:" /etc/shadow || echo "${user}:!*:::::::" >>/etc/shadow
+  if getent group "$user" >/dev/null; then
+    grep -q "^${user}:" /etc/gshadow || echo "${user}:!*::" >>/etc/gshadow
+  fi
+done

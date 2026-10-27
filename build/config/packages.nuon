@@ -122,6 +122,8 @@
   remove: [
     "firefox"
     "firefox-langpacks"
+    # X11 apps video bridge; nothing requires it, unused on a niri/plasma-wayland desktop
+    "xwaylandvideobridge"
     # base image (fedora-bootc:44) ships nfs-utils and preset-enables
     # nfs-client.target; drop the whole NFS/RPC family since nothing
     # else depends on it (no NFS shares are mounted here).

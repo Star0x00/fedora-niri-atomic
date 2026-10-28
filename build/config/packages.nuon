@@ -72,6 +72,8 @@
       "pass"
       "zmx"
       "go-musicfox"
+      "mpv"
+      "mineral"
       "playerctl"
       "gtk-murrine-engine"
       "zsh"
@@ -88,7 +90,6 @@
       "bibata-cursor-theme"
       "colloid-gtk-theme"
       "adw-gtk3-theme"
-      "gnome-tweaks"
       # file managers
       "nautilus"
       # desktop portals

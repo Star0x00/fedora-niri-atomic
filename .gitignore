@@ -1,5 +1,7 @@
 .codex
 output/
+# plan copies written by the maki plan_lifecycle plugin
+.maki/plans/
 # pixi environments
 .pixi/*
 !.pixi/config.toml

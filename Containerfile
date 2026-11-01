@@ -41,7 +41,7 @@ COPY build /tmp/build
 # Layer ordering strategy (stable -> changing) for better caching:
 #   L1  bootstrap (rpmfusion + nushell)
 #   L2  repo stage (rpmfusion / terra / COPR / priority)
-#   L3  system group      (zram, mesa)      -- foundational, rarely churn
+#   L3  system group      (mesa)            -- foundational, rarely churn
 #   L4  fonts group       (noto)            -- stable
 #   L5  services group    (daemons/virt/net)-- stable-ish
 #   L6  utils group       (toolchain, etc.) -- stable-ish

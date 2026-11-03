@@ -1,0 +1,16 @@
+# Extra RPMs installed outside the package groups.
+
+# direct URLs to fixed-version RPMs
+[extras.static]
+# 'flectar-mail' = { url = 'https://example.com/flectar-mail-1.0.0-linux-x64.rpm' }
+
+# GitHub latest release RPMs; the tag is resolved from the GitHub API at build
+# time and substituted into url_template ({tag} and {version}).
+[extras.github_latest]
+# 'flectar-mail' = { repo = 'flectar/mail', version_prefix_to_strip = 'v', url_template = 'https://github.com/flectar/mail/releases/download/{tag}/flectar-mail-{version}-linux-x64.rpm' }
+
+# Fonts downloaded from a direct URL (not RPMs). url can point to a plain
+# .ttf/.otf file OR an archive (.zip / .tar.gz / .tar.xz / .tar.bz2 / .7z);
+# archives are extracted into dest_dir. fc-cache (system stage) indexes them.
+[extras.fonts]
+# 'maple-mono-nf-cn' = { url = 'https://example.com/MapleMono-NF-CN.zip', dest_dir = '/usr/share/fonts/maple-mono-nf-cn' }

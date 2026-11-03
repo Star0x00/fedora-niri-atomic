@@ -1,0 +1,19 @@
+# flatpak remotes and systemd service state.
+
+# each entry: `flatpak remote-add --if-not-exists <name> <url>`
+[system.flatpak]
+flathub = 'https://dl.flathub.org/repo/flathub.flatpakrepo'
+
+[system.services]
+enable = [
+  'bluetooth.service',
+  'avahi-daemon.service',
+  'fedora-repair-passwd.service',
+  'plasmalogin-shadow-fix.service',
+]
+
+disable = [
+  'bootc-fetch-apply-updates.timer',
+  # stamp-based workaround; superseded by plasmalogin-shadow-fix.service
+  'fedora-kinoite-plasmalogin-workaround.service',
+]

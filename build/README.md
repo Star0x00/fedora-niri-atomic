@@ -2,10 +2,10 @@
 
 > 中文版本：[`README-zh.md`](README-zh.md)
 
-This build layout moves most repo / package / system configuration out of `Containerfile` and into a small Nu + NUON build subsystem.
+This build layout moves most repo / package / system configuration out of `Containerfile` and into a small Python + TOML build subsystem.
 
-- `NUON` describes **what** to enable or install
-- `Nu` describes **how** the build steps are executed
+- `TOML` describes **what** to enable or install
+- `Python` describes **how** the build steps are executed
 
 Goals:
 
@@ -23,62 +23,63 @@ build/
 ├── README.md                     # this document (English)
 ├── README-zh.md                  # this document (Chinese)
 ├── config/
-│   ├── repos.nuon                # repo config: rpmfusion / terra / copr / priority
-│   ├── packages.nuon             # package groups and removal list
-│   ├── extras.nuon               # extra RPMs: fixed URLs / GitHub latest
-│   └── system.nuon               # flatpak remotes and systemd services
+│   ├── repos.toml                # repo config: rpmfusion / external / setopt / copr
+│   ├── packages.toml             # package groups and removal list
+│   ├── extras.toml               # extra RPMs: fixed URLs / GitHub latest
+│   └── system.toml               # flatpak remotes and systemd services
 └── scripts/
-    ├── build.nu                  # top-level entrypoint: runs repos / packages / system stages
+    ├── build.py                  # top-level entrypoint: runs repos / packages / system stages
     └── lib/
-        ├── common.nu             # shared helpers: printing, dry-run, config loading, dnf helpers
-        ├── repos.nu              # repo stage: rpmfusion / rawhide / terra / copr / priority
-        ├── packages.nu           # package stage: packages, removals, extra RPMs
-        └── system.nu             # system stage: flatpak, fc-cache, services, bootc lint
+        ├── common.py             # shared helpers: printing, dry-run, config loading, dnf helpers
+        ├── repos.py              # repo stage: rpmfusion / external / rawhide / copr / priority
+        ├── packages.py           # package stage: packages, removals, extra RPMs
+        └── system.py             # system stage: flatpak, fc-cache, services, bootc lint
 ```
 
 ---
 
 ## Structure and responsibilities
 
-### 1. `config/repos.nuon`
+### 1. `config/repos.toml`
 Repo-related configuration:
 
-- rpmfusion release URL templates
-- `dnf config-manager setopt`
-- disabling `*rawhide*` repos
-- terra repo and `terra-release`
-- COPR groups
-- repo `priority=1` overrides
+- `rpmfusion` — release RPM URL templates (`{fedora}` is substituted)
+- `external` — repo files added with `dnf config-manager addrepo`
+- `setopt` — `dnf config-manager setopt <key>=<value>` options
+- `disable_glob` — globs of repo files to disable (`*rawhide*`)
+- `[repos.copr.groups]` — COPR projects per group, enabled in key order
+- `[repos.copr.priority]` — `'owner/project' = N`, appended as `priority=N` to
+  the generated `/etc/yum.repos.d/_copr:owner:project.repo` file
 
 Typical edits:
 
 - add / remove a COPR repo
-- change repo enable order
-- add priority to a repo file
-- adjust terra / rpmfusion settings
+- change COPR enable order
+- add priority to a COPR repo
+- adjust rpmfusion settings
 
 ---
 
-### 2. `config/packages.nuon`
-Package group configuration:
+### 2. `config/packages.toml`
+Package group configuration: plain arrays of package names.
 
-- `desktop`
-- `gaming`
-- `utils`
-- `fonts`
-- `system`
-- `remove`
+- `[packages.groups]` — one array per group, e.g. `desktop = ['niri', ...]`
+- `remove` — packages removed from the base image
+- `reinstall` — packages removed then re-installed from the highest-priority repo
+
+The key order inside `[packages.groups]` is the install order (most stable
+first), so a new group only needs to be placed where it belongs.
 
 Typical edits:
 
 - add or remove packages from a group
-- adjust install order
+- move a group to adjust install order
 - add a new package group
 - add a package to the removal list
 
 ---
 
-### 3. `config/extras.nuon`
+### 3. `config/extras.toml`
 Extra RPM sources that are not ordinary named packages:
 
 - fixed download URL RPMs
@@ -95,36 +96,29 @@ Typical edits:
 
 A font entry looks like:
 
-```nuon
-fonts: [
-  {
-    name: "LXGW WenKai GB"
-    url: "https://github.com/lxgw/LxgwWenkaiGB/releases/download/v1.522/lxgw-wenkai-gb-v1.522.tar.gz"
-    dest_dir: "/usr/share/fonts/lxgw-wenkai-gb"
-  }
-]
+```toml
+[extras.fonts.'LXGW WenKai GB']
+url = 'https://github.com/lxgw/LxgwWenkaiGB/releases/download/v1.522/lxgw-wenkai-gb-v1.522.tar.gz'
+dest_dir = '/usr/share/fonts/lxgw-wenkai-gb'
 
 # a plain single file also works (no extraction):
-fonts: [
-  {
-    name: "Some Font"
-    url: "https://example.com/path/font.ttf"
-    dest_dir: "/usr/share/fonts/custom"
-  }
-]
+[extras.fonts.'Some Font']
+url = 'https://example.com/path/font.ttf'
+dest_dir = '/usr/share/fonts/custom'
 ```
 
-`url` may point to any host (not just GitHub). Archives are detected by file extension and
-unpacked into `dest_dir`; plain `.ttf`/`.otf` files are copied as-is. `fc-cache` (system
-stage) indexes them afterwards. Requires `curl`, `unzip`, and `p7zip` (already in the
-`utils` package group).
+The table key is the display name; `url` may point to any host (not just
+GitHub). Archives are detected by file extension and unpacked into `dest_dir`;
+plain `.ttf`/`.otf` files are copied as-is. `fc-cache` (system stage) indexes
+them afterwards. Requires `curl`, `unzip`, and `p7zip` (already in the `utils`
+package group).
 ---
 
-### 4. `config/system.nuon`
+### 4. `config/system.toml`
 System-level configuration:
 
-- flatpak remotes
-- services to enable with `systemctl enable`
+- `[system.flatpak]` — remote name → repo URL
+- `[system.services]` — `enable` / `disable` arrays of unit names
 
 Typical edits:
 
@@ -135,13 +129,13 @@ Typical edits:
 
 ## Script responsibilities
 
-### `scripts/build.nu`
+### `scripts/build.py`
 Top-level orchestrator.
 
 It only:
 
 1. finds the `build/` root
-2. loads all `nuon` config files
+2. loads the four `toml` config files
 3. runs the stages, orderable per invocation:
    - repo stage
    - package stage (all groups, or a single `--group`)
@@ -155,45 +149,44 @@ Supported `--stage` values:
 
 - `repo` — repo stage only
 - `packages` — install package groups; if `--group <name>` is given,
-  install that single group only, otherwise all groups in `install_order`
+  install that single group only, otherwise all groups in table order
 - `finalize` — removals / reinstalls / static & github-latest RPMs / fonts
 - `system` — flatpak / font cache / services / bootc lint
 - `all` (default) — repo → packages → finalize → system
 
 ---
 
-### `scripts/lib/common.nu`
+### `scripts/lib/common.py`
 Shared utilities.
 
 Includes helpers such as:
 
-- `print-step`
-- `print-bullets`
-- `run-cmd`
-- `resolve-project-root`
-- `load-config`
-- `dnf-clean`
-- `dnf-install-lean`
-- `strip-version-prefix`
+- `print_step`
+- `print_bullets`
+- `run_cmd`
+- `resolve_project_root`
+- `load_config`
+- `dnf_clean`
+- `dnf_install_lean`
+- `strip_version_prefix`
 
 ---
 
-### `scripts/lib/repos.nu`
+### `scripts/lib/repos.py`
 Repo stage only:
 
 - rpmfusion
+- external repo files
 - `dnf config-manager setopt`
 - disable rawhide
-- terra release
-- COPR enable
-- repo priority override
+- COPR enable + priority override
 
 ---
 
-### `scripts/lib/packages.nu`
+### `scripts/lib/packages.py`
 Package stage only:
 
-- install package groups (or a single group via `install-package-group`)
+- install package groups (or a single group via `install_package_group`)
 - remove packages
 - reinstall packages (base-image replacement mechanism)
 - install fixed URL RPMs
@@ -202,7 +195,7 @@ Package stage only:
 
 ---
 
-### `scripts/lib/system.nu`
+### `scripts/lib/system.py`
 System post-processing:
 
 - flatpak remotes
@@ -216,27 +209,27 @@ System post-processing:
 ## Execution flow
 
 ```text
-build.nu
-  ├─ load repos.nuon
-  ├─ load packages.nuon
-  ├─ load extras.nuon
-  ├─ load system.nuon
+build.py
+  ├─ load repos.toml        → cfg["repos"]
+  ├─ load packages.toml     → cfg["packages"]
+  ├─ load extras.toml       → cfg["extras"]
+  ├─ load system.toml       → cfg["system"]
   │
   ├─ (--stage repo)
-  │   run-repo-stage
+  │   run_repo_stage
   │     ├─ install rpmfusion
+  │     ├─ add external repo files
   │     ├─ set dnf config-manager options
   │     ├─ disable rawhide repos
-  │     ├─ install terra-release
   │     ├─ enable copr groups
   │     └─ apply repo priorities
   │
   ├─ (--stage packages)
-  │   install-package-groups (or install-package-group --group <name>)
-  │     └─ dnf install each group in install_order (stable first)
+  │   install_package_groups (or install_package_group with --group <name>)
+  │     └─ dnf install each group in table order (stable first)
   │
   ├─ (--stage finalize)
-  │   finalize-packages
+  │   finalize_packages
   │     ├─ remove packages
   │     ├─ reinstall packages
   │     ├─ install static rpms
@@ -244,7 +237,7 @@ build.nu
   │     └─ install fonts
   │
   └─ (--stage system)
-      run-system-stage
+      run_system_stage
         ├─ configure flatpak remotes
         ├─ refresh font cache
         ├─ enable services
@@ -259,20 +252,19 @@ image layer — ordered from **most stable to most frequently changing**
 so unchanged layers are cached and only the layers after a change rebuild:
 
 ```dockerfile
-RUN nu build.nu --stage repo
-RUN nu build.nu --stage packages --group system
-RUN nu build.nu --stage packages --group fonts
-RUN nu build.nu --stage packages --group utils
-RUN nu build.nu --stage packages --group desktop
-RUN nu build.nu --stage packages --group gaming
-RUN nu build.nu --stage finalize
-RUN nu build.nu --stage system
+RUN python3 -B build.py --stage repo
+RUN python3 -B build.py --stage packages --group system
+RUN python3 -B build.py --stage packages --group fonts
+RUN python3 -B build.py --stage packages --group utils
+RUN python3 -B build.py --stage packages --group desktop
+RUN python3 -B build.py --stage packages --group gaming
+RUN python3 -B build.py --stage finalize
+RUN python3 -B build.py --stage system
 ```
 
 If you add a new package group, decide where it sits on the stability
-axis and add a matching `RUN ... --group <name>` line, plus a `--stage
-repo`-style comment. The `install_order` in `config/packages.nuon` only
-matters for the `all` / no-flag path.
+axis, add its `[packages.groups.<name>]` table at the matching position in
+`config/packages.toml`, and add a matching `RUN ... --group <name>` line.
 
 ---
 
@@ -281,13 +273,13 @@ matters for the `all` / no-flag path.
 ### 1. Dry-run from the repository root
 
 ```bash
-nu build/scripts/build.nu build --dry-run
+python3 build/scripts/build.py build --dry-run
 ```
 
 Or:
 
 ```bash
-nu build/scripts/build.nu build -n
+python3 build/scripts/build.py build -n
 ```
 
 ---
@@ -295,7 +287,7 @@ nu build/scripts/build.nu build -n
 ### 2. Dry-run inside a zmx session
 
 ```bash
-zmx run system-oci -- nu build/scripts/build.nu build --dry-run
+zmx run system-oci -- python3 build/scripts/build.py build --dry-run
 ```
 
 ---
@@ -307,15 +299,15 @@ zmx run system-oci -- nu build/scripts/build.nu build --dry-run
 
 ```dockerfile
 COPY build /tmp/build
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage repo
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group system
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group fonts
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group utils
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group desktop
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group gaming
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage finalize
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage repo
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group system
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group fonts
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group utils
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group desktop
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group gaming
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage finalize
 # ... then systemd units are copied, then:
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage system
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage system
 ```
 
 Note that the argument is the **build root**, not a single config file.
@@ -324,15 +316,16 @@ Note that the argument is the **build root**, not a single config file.
 
 ## Why the bootstrap step still exists in `Containerfile`
 
-The image must contain `nushell` before any `.nu` script can run.
+The `build.py` entrypoint is stdlib-only Python, so it needs nothing installed
+beyond `python3` — which the Fedora base image already ships.
 
-So `Containerfile` still needs a small bootstrap step to:
+So `Containerfile` only needs a small bootstrap step that installs rpmfusion
+(plus a `dnf install -y python3` no-op for documentation), then the repo /
+package / system flow runs straight from `/tmp/build`.
 
-1. install rpmfusion
-2. enable `atim/nushell` COPR
-3. install `nushell`
-
-Only after that can the main repo / package / system flow be delegated to Nu.
+Using the distro `python3` instead of a COPR-provided interpreter keeps the
+bootstrap free of third-party repos and keeps the shipped image smaller: the
+orchestrator is a base-image package, not an extra one.
 
 ---
 
@@ -341,28 +334,28 @@ Only after that can the main repo / package / system flow be delegated to Nu.
 ### Change packages
 Prefer editing:
 
-- `config/packages.nuon`
+- `config/packages.toml`
 
 ### Change repos
 Prefer editing:
 
-- `config/repos.nuon`
+- `config/repos.toml`
 
 ### Change extra RPM sources
 Prefer editing:
 
-- `config/extras.nuon`
+- `config/extras.toml`
 
 ### Change services or flatpak remotes
 Prefer editing:
 
-- `config/system.nuon`
+- `config/system.toml`
 
 ### Change execution logic
 Prefer editing:
 
-- `scripts/lib/*.nu`
-- `scripts/build.nu`
+- `scripts/lib/*.py`
+- `scripts/build.py`
 
 ### Shadow entries for image-only accounts
 
@@ -376,7 +369,7 @@ not recreate them (the account already resolves via NSS), so PAM fails with
 `PAM_AUTHINFO_UNAVAIL` — the plasmalogin greeter then cannot start (black screen).
 
 The unit re-adds the entries idempotently on every boot and supersedes Fedora's
-stamp-based `fedora-kinoite-plasmalogin-workaround.service` (masked in `system.nuon`).
+stamp-based `fedora-kinoite-plasmalogin-workaround.service` (masked in `system.toml`).
 Upstream: https://forge.fedoraproject.org/kde/tracker/issues/684
 
 ---
@@ -409,7 +402,7 @@ Relevant files:
 After changing config, always run:
 
 ```bash
-nu build/scripts/build.nu build --dry-run
+python3 build/scripts/build.py build --dry-run
 ```
 
 Check that:

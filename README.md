@@ -9,7 +9,7 @@ The current goals are roughly:
 - base the image on `quay.io/fedora/fedora-kinoite:44`
 - provide a usable Wayland desktop environment
 - keep parts of the Hyprland / KDE ecosystem available
-- manage repos, packages, and system configuration with `Containerfile + Nu + NUON`
+- manage repos, packages, and system configuration with `Containerfile + Python + TOML`
 
 ---
 
@@ -30,17 +30,17 @@ The current goals are roughly:
 │   ├── README.md                 # build subsystem documentation (English)
 │   ├── README-zh.md              # build subsystem documentation (Chinese)
 │   ├── config/
-│   │   ├── repos.nuon            # repo config: rpmfusion / terra / copr / priority
-│   │   ├── packages.nuon         # package groups and remove list
-│   │   ├── extras.nuon           # extra RPMs / GitHub latest release entries
-│   │   └── system.nuon           # flatpak remotes / systemd services
+│   │   ├── repos.toml            # repo config: rpmfusion / external / setopt / copr
+│   │   ├── packages.toml         # package groups and remove list
+│   │   ├── extras.toml           # extra RPMs / GitHub latest release entries
+│   │   └── system.toml           # flatpak remotes / systemd services
 │   └── scripts/
-│       ├── build.nu              # top-level Nu entrypoint
+│       ├── build.py              # top-level Python entrypoint
 │       └── lib/
-│           ├── common.nu         # shared helpers
-│           ├── repos.nu          # repo stage logic
-│           ├── packages.nu       # package stage logic
-│           └── system.nu         # system stage logic
+│           ├── common.py         # shared helpers
+│           ├── repos.py          # repo stage logic
+│           ├── packages.py       # package stage logic
+│           └── system.py         # system stage logic
 └── rootfs/                       # files copied directly into the image filesystem
     ├── etc/
     └── usr/
@@ -55,8 +55,8 @@ Responsible for:
 
 - defining the multi-stage image build
 - downloading font assets
-- bootstrapping `nushell`
-- invoking `build/scripts/build.nu`
+- bootstrapping `rpmfusion` (the pipeline itself only needs the base image's `python3`)
+- invoking `build/scripts/build.py`
 - producing the final bootc/OCI image
 
 It now acts mainly as a thin orchestration entrypoint instead of holding a very long inline `RUN dnf ...` chain.
@@ -66,8 +66,8 @@ It now acts mainly as a thin orchestration entrypoint instead of holding a very 
 ### `build/`
 Responsible for the config-driven build system:
 
-- `NUON` files describe **what** to install or enable
-- `Nu` scripts describe **how** to execute the build steps
+- `TOML` files describe **what** to install or enable
+- `Python` scripts describe **how** to execute the build steps
 
 See also:
 
@@ -124,27 +124,27 @@ inside the built `fedora-bootc` image, so no Fedora runner is required.
 ```text
 build/
 ├── config/
-│   ├── repos.nuon
-│   ├── packages.nuon
-│   ├── extras.nuon
-│   └── system.nuon
+│   ├── repos.toml
+│   ├── packages.toml
+│   ├── extras.toml
+│   └── system.toml
 └── scripts/
-    ├── build.nu
+    ├── build.py
     └── lib/
-        ├── common.nu
-        ├── repos.nu
-        ├── packages.nu
-        └── system.nu
+        ├── common.py
+        ├── repos.py
+        ├── packages.py
+        └── system.py
 ```
 
 Responsibilities:
 
-- `repos.nuon`: repo sources and priorities
-- `packages.nuon`: package groups and removal list
-- `extras.nuon`: extra RPMs and GitHub latest-release logic
-- `system.nuon`: flatpak and service configuration
-- `build.nu`: top-level orchestration
-- `lib/*.nu`: logic split by stage to keep files manageable
+- `repos.toml`: repo sources and priorities (one table header per entry)
+- `packages.toml`: package groups (arrays of names) and removal list
+- `extras.toml`: extra RPMs and GitHub latest-release logic
+- `system.toml`: flatpak and service configuration
+- `build.py`: top-level orchestration
+- `lib/*.py`: logic split by stage to keep files manageable
 
 ---
 
@@ -152,16 +152,16 @@ Responsibilities:
 
 ### 1. Preview the build plan first
 
-After changing `build/config/*.nuon`, run a dry-run first:
+After changing `build/config/*.toml`, run a dry-run first:
 
 ```bash
-nu build/scripts/build.nu build --dry-run
+python3 build/scripts/build.py build --dry-run
 ```
 
 Short form:
 
 ```bash
-nu build/scripts/build.nu build -n
+python3 build/scripts/build.py build -n
 ```
 
 This prints:
@@ -190,7 +190,7 @@ podman build -t fedora-niri-atomic:dev -f Containerfile .
 
 ---
 
-### 3. Manually run the real Nu build pipeline
+### 3. Manually run the real build pipeline
 
 This is usually **not** recommended directly on the host, because it will actually invoke:
 
@@ -202,36 +202,40 @@ This is usually **not** recommended directly on the host, because it will actual
 But in a suitable container or test environment, you can run:
 
 ```bash
-nu build/scripts/build.nu build
+python3 build/scripts/build.py build
 ```
 
 Inside the image build, `Containerfile` already does this automatically:
 
 ```dockerfile
 COPY build /tmp/build
-RUN nu /tmp/build/scripts/build.nu /tmp/build
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage repo
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group system
+# ... one RUN per package group, then finalize and system stages
 ```
 
 ---
 
 ### 4. Inspect a specific config section
 
+Config files are plain TOML, so read them with anything that speaks TOML.
+
 Show package groups:
 
 ```bash
-nu -c 'open build/config/packages.nuon | get groups'
+python3 -c 'import tomllib; print(list(tomllib.load(open("build/config/packages.toml","rb"))["packages"]["groups"]))'
 ```
 
 Show the desktop group:
 
 ```bash
-nu -c 'open build/config/packages.nuon | get groups.desktop'
+python3 -c 'import tomllib; print(list(tomllib.load(open("build/config/packages.toml","rb"))["packages"]["groups"]["desktop"]))'
 ```
 
 Show all COPR groups:
 
 ```bash
-nu -c 'open build/config/repos.nuon | get copr.groups'
+python3 -c 'import tomllib; print(list(tomllib.load(open("build/config/repos.toml","rb"))["repos"]["copr"]))'
 ```
 
 ---
@@ -241,65 +245,59 @@ nu -c 'open build/config/repos.nuon | get copr.groups'
 ### Add a COPR repo
 Edit:
 
-- `build/config/repos.nuon`
+- `build/config/repos.toml`
 
 Common places:
 
-- `copr.groups.desktop`
-- `copr.groups.utils`
-- `priority_overrides`
+- `[repos.copr.groups]`
+- `[repos.copr.priority]`
 
 ---
 
 ### Add a normal package
 Edit:
 
-- `build/config/packages.nuon`
+- `build/config/packages.toml`
 
-Put it into the appropriate group, for example:
-
-- `desktop`
-- `gaming`
-- `utils`
-- `fonts`
-- `system`
+Put it into the appropriate array inside `[packages.groups]`, for example
+`desktop`, `gaming`, `utils`, `fonts`, or `system`.
 
 ---
 
 ### Add a GitHub release RPM
 Edit:
 
-- `build/config/extras.nuon`
+- `build/config/extras.toml`
 
 If it uses a fixed version URL, add it to:
 
-- `static`
+- `[extras.static]`
 
 If it should always use the latest GitHub release, add it to:
 
-- `github_latest`
+- `[extras.github_latest]`
 
 ---
 
 ### Add an enabled service
 Edit:
 
-- `build/config/system.nuon`
+- `build/config/system.toml`
 
 Location:
 
-- `services.enable`
+- `[system.services]` → `enable` array
 
 ---
 
 ### Add a flatpak remote
 Edit:
 
-- `build/config/system.nuon`
+- `build/config/system.toml`
 
 Location:
 
-- `flatpak.remotes`
+- `[system.flatpak]`
 
 ---
 
@@ -309,11 +307,11 @@ Location:
 
 ### When changing config
 
-1. Edit `build/config/*.nuon`
+1. Edit `build/config/*.toml`
 2. Run a dry-run:
 
 ```bash
-nu build/scripts/build.nu build --dry-run
+python3 build/scripts/build.py build --dry-run
 ```
 
 3. Verify the output
@@ -329,28 +327,27 @@ podman build -t fedora-niri-atomic:dev -f Containerfile .
 
 Prefer editing:
 
-- `build/scripts/lib/common.nu`
-- `build/scripts/lib/repos.nu`
-- `build/scripts/lib/packages.nu`
-- `build/scripts/lib/system.nu`
+- `build/scripts/lib/common.py`
+- `build/scripts/lib/repos.py`
+- `build/scripts/lib/packages.py`
+- `build/scripts/lib/system.py`
 
 Then run dry-run again.
 
 ---
 
-## Why `nushell` bootstrap still exists
+## Why the bootstrap step still exists
 
-Even though the main repo/package/system logic has been moved to Nu, the image must already contain `nushell` before any `.nu` script can run.
+`build.py` is stdlib-only Python, and the Fedora base image already ships
+`python3` (verified against `quay.io/fedora/fedora-kinoite:45`).
 
-So `Containerfile` still keeps a small bootstrap step to:
+So `Containerfile` only keeps a small bootstrap step that:
 
-1. install rpmfusion
-2. enable `atim/nushell`
-3. install `nushell`
+1. installs rpmfusion
+2. installs `python3` (already present — the line just documents the dependency)
 
-Only after that does it hand over the main build flow to Nu.
-
-This is intentional and required.
+Then it hands over to the Python pipeline. No third-party repo is needed to
+get the orchestrator itself, and nothing extra ships in the image for it.
 
 ---
 

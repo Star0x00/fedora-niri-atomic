@@ -2,10 +2,10 @@
 
 > English version: [`README.md`](README.md)
 
-这套构建布局把原本 `Containerfile` 里大量 repo / package / system 配置拆到了一个较小的 Nu + NUON 子系统中。
+这套构建布局把原本 `Containerfile` 里大量 repo / package / system 配置拆到了一个较小的 Python + TOML 子系统中。
 
-- `NUON` 负责描述“装什么 / 启用什么”
-- `Nu` 负责描述“怎么执行”
+- `TOML` 负责描述“装什么 / 启用什么”
+- `Python` 负责描述“怎么执行”
 
 目标包括：
 
@@ -23,62 +23,63 @@ build/
 ├── README.md                     # 本说明文档（英文）
 ├── README-zh.md                  # 本说明文档（中文）
 ├── config/
-│   ├── repos.nuon                # 仓库配置：rpmfusion / terra / copr / priority
-│   ├── packages.nuon             # 包分组与移除列表
-│   ├── extras.nuon               # 额外 RPM：固定 URL / GitHub latest
-│   └── system.nuon               # flatpak remote 与 systemd services
+│   ├── repos.toml                # 仓库配置：rpmfusion / external / setopt / copr
+│   ├── packages.toml             # 包分组与移除列表
+│   ├── extras.toml               # 额外 RPM：固定 URL / GitHub latest
+│   └── system.toml               # flatpak remote 与 systemd services
 └── scripts/
-    ├── build.nu                  # 总入口：串联 repos / packages / system 三个阶段
+    ├── build.py                  # 总入口：串联 repos / packages / system 三个阶段
     └── lib/
-        ├── common.nu             # 通用函数：打印、dry-run、加载配置、dnf helper
-        ├── repos.nu              # repo 阶段：rpmfusion / rawhide / terra / copr / priority
-        ├── packages.nu           # package 阶段：安装包、删除包、额外 RPM
-        └── system.nu             # system 阶段：flatpak、fc-cache、services、bootc lint
+        ├── common.py             # 通用函数：打印、dry-run、加载配置、dnf helper
+        ├── repos.py              # repo 阶段：rpmfusion / external / rawhide / copr / priority
+        ├── packages.py           # package 阶段：安装包、删除包、额外 RPM
+        └── system.py             # system 阶段：flatpak、fc-cache、services、bootc lint
 ```
 
 ---
 
 ## 结构与职责
 
-### 1. `config/repos.nuon`
+### 1. `config/repos.toml`
 负责仓库相关配置：
 
-- rpmfusion release URL 模板
-- `dnf config-manager setopt`
-- 禁用 `*rawhide*` repo
-- terra repo 与 `terra-release`
-- 所有 COPR 分组
-- repo `priority=1` 覆盖
+- `rpmfusion` — release RPM URL 模板（`{fedora}` 会被替换）
+- `external` — 通过 `dnf config-manager addrepo` 添加的 repo 文件
+- `setopt` — `dnf config-manager setopt <key>=<value>` 选项
+- `disable_glob` — 需要禁用的 repo 文件 glob（`*rawhide*`）
+- `[repos.copr.groups]` — 每个分组的 COPR 项目，按键顺序启用
+- `[repos.copr.priority]` — `'owner/project' = N`，会把 `priority=N` 追加到
+  生成的 `/etc/yum.repos.d/_copr:owner:project.repo` 文件中
 
 适合修改的场景：
 
 - 新增 / 删除 COPR
-- 调整 repo 启用顺序
-- 给某个 repo 增加 priority
-- 修改 terra / rpmfusion 配置
+- 调整 COPR 启用顺序
+- 给某个 COPR 增加 priority
+- 修改 rpmfusion 配置
 
 ---
 
-### 2. `config/packages.nuon`
-负责软件包分组：
+### 2. `config/packages.toml`
+负责软件包分组，就是普通的名字数组：
 
-- `desktop`
-- `gaming`
-- `utils`
-- `fonts`
-- `system`
-- `remove`
+- `[packages.groups]` — 每个分组一个数组，例如 `desktop = ['niri', ...]`
+- `remove` — 要从基础镜像里移除的包
+- `reinstall` — 先删除再从最高优先级仓库重装的包
+
+`[packages.groups]` 下的键顺序就是安装顺序（稳定的在前），新增分组时把数组放到
+对应的位置即可。
 
 适合修改的场景：
 
 - 增减某组包
-- 调整安装顺序
+- 移动分组位置以调整安装顺序
 - 添加新的包分组
 - 添加待移除的软件包
 
 ---
 
-### 3. `config/extras.nuon`
+### 3. `config/extras.toml`
 负责非普通命名包的额外 RPM 来源：
 
 - 固定下载 URL 的 RPM
@@ -94,33 +95,25 @@ build/
 
 字体条目示例：
 
-```nuon
-fonts: [
-  {
-    name: "LXGW WenKai GB"
-    url: "https://github.com/lxgw/LxgwWenkaiGB/releases/download/v1.522/lxgw-wenkai-gb-v1.522.tar.gz"
-    dest_dir: "/usr/share/fonts/lxgw-wenkai-gb"
-  }
-]
+```toml
+[extras.fonts.'LXGW WenKai GB']
+url = 'https://github.com/lxgw/LxgwWenkaiGB/releases/download/v1.522/lxgw-wenkai-gb-v1.522.tar.gz'
+dest_dir = '/usr/share/fonts/lxgw-wenkai-gb'
 
 # 单个字体文件也可直接使用（不解压）：
-fonts: [
-  {
-    name: "Some Font"
-    url: "https://example.com/path/font.ttf"
-    dest_dir: "/usr/share/fonts/custom"
-  }
-]
+[extras.fonts.'Some Font']
+url = 'https://example.com/path/font.ttf'
+dest_dir = '/usr/share/fonts/custom'
 ```
 
-`url` 可以指向任意主机（不限于 GitHub）。压缩包按文件扩展名识别并解压到 `dest_dir`，普通 `.ttf`/`.otf` 直接复制。随后由系统阶段的 `fc-cache` 索引。依赖 `curl`、`unzip`、`p7zip`（已在 `utils` 包组中）。
+表键就是显示名称，`url` 可以指向任意主机（不限于 GitHub）。压缩包按文件扩展名识别并解压到 `dest_dir`，普通 `.ttf`/`.otf` 直接复制。随后由系统阶段的 `fc-cache` 索引。依赖 `curl`、`unzip`、`p7zip`（已在 `utils` 包组中）。
 ---
 
-### 4. `config/system.nuon`
+### 4. `config/system.toml`
 负责系统级配置：
 
-- flatpak remotes
-- 需要 `systemctl enable` 的服务
+- `[system.flatpak]` — remote 名称 → repo URL
+- `[system.services]` — `enable` / `disable` 两个服务名数组
 
 适合修改的场景：
 
@@ -131,49 +124,49 @@ fonts: [
 
 ## 脚本职责
 
-### `scripts/build.nu`
+### `scripts/build.py`
 总入口 / orchestrator。
 
 它只负责：
 
 1. 定位 `build/` 根目录
-2. 加载所有 `nuon` 配置文件
-3. 按顺序执行三个阶段：
+2. 加载四份 `toml` 配置文件
+3. 按 `--stage` 执行对应阶段：
    - repo stage
-   - package stage
+   - package stage（全部分组，或 `--group` 指定的单个分组）
+   - finalize stage（remove / reinstall / extras / 字体下载）
    - system stage
 
 ---
 
-### `scripts/lib/common.nu`
+### `scripts/lib/common.py`
 公共工具层。
 
 包括：
 
-- `print-step`
-- `print-bullets`
-- `run-cmd`
-- `resolve-project-root`
-- `load-config`
-- `dnf-clean`
-- `dnf-install-lean`
-- `strip-version-prefix`
+- `print_step`
+- `print_bullets`
+- `run_cmd`
+- `resolve_project_root`
+- `load_config`
+- `dnf_clean`
+- `dnf_install_lean`
+- `strip_version_prefix`
 
 ---
 
-### `scripts/lib/repos.nu`
+### `scripts/lib/repos.py`
 只负责 repo 阶段：
 
 - rpmfusion
+- external repo 文件
 - `dnf config-manager setopt`
 - 禁用 rawhide
-- terra release
-- COPR enable
-- repo priority override
+- COPR enable + priority override
 
 ---
 
-### `scripts/lib/packages.nu`
+### `scripts/lib/packages.py`
 只负责 package 阶段：
 
 - 安装包分组
@@ -183,7 +176,7 @@ fonts: [
 
 ---
 
-### `scripts/lib/system.nu`
+### `scripts/lib/system.py`
 只负责系统后处理：
 
 - flatpak remotes
@@ -197,27 +190,31 @@ fonts: [
 ## 执行流程图
 
 ```text
-build.nu
-  ├─ load repos.nuon
-  ├─ load packages.nuon
-  ├─ load extras.nuon
-  ├─ load system.nuon
+build.py
+  ├─ load repos.toml
+  ├─ load packages.toml
+  ├─ load extras.toml
+  ├─ load system.toml
   │
-  ├─ run-repo-stage
+  ├─ (--stage repo) run_repo_stage
   │   ├─ install rpmfusion
+  │   ├─ add external repo files
   │   ├─ set dnf config-manager options
   │   ├─ disable rawhide repos
-  │   ├─ install terra-release
   │   ├─ enable copr groups
   │   └─ apply repo priorities
   │
-  ├─ run-package-stage
-  │   ├─ install package groups
-  │   ├─ remove packages
-  │   ├─ install static rpms
-  │   └─ install github latest rpms
+  ├─ (--stage packages) install_package_groups / install_package_group
+  │   └─ 按表顺序安装分组（稳定的在前）
   │
-  └─ run-system-stage
+  ├─ (--stage finalize) finalize_packages
+  │   ├─ remove packages
+  │   ├─ reinstall packages
+  │   ├─ install static rpms
+  │   ├─ install github latest rpms
+  │   └─ install fonts
+  │
+  └─ (--stage system) run_system_stage
       ├─ configure flatpak remotes
       ├─ refresh font cache
       ├─ enable services
@@ -231,13 +228,13 @@ build.nu
 ### 1. 在仓库根目录 dry-run
 
 ```bash
-nu build/scripts/build.nu build --dry-run
+python3 build/scripts/build.py build --dry-run
 ```
 
 或者：
 
 ```bash
-nu build/scripts/build.nu build -n
+python3 build/scripts/build.py build -n
 ```
 
 ---
@@ -245,7 +242,7 @@ nu build/scripts/build.nu build -n
 ### 2. 在 zmx session 中 dry-run
 
 ```bash
-zmx run system-oci -- nu build/scripts/build.nu build --dry-run
+zmx run system-oci -- python3 build/scripts/build.py build --dry-run
 ```
 
 ---
@@ -256,7 +253,11 @@ zmx run system-oci -- nu build/scripts/build.nu build --dry-run
 
 ```dockerfile
 COPY build /tmp/build
-RUN nu /tmp/build/scripts/build.nu /tmp/build
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage repo
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group system
+# ...每组一层，最后：
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage finalize
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage system
 ```
 
 注意这里传入的是 **build 根目录**，不是单独的配置文件路径。
@@ -265,15 +266,14 @@ RUN nu /tmp/build/scripts/build.nu /tmp/build
 
 ## 为什么 `Containerfile` 里仍然保留 bootstrap 步骤
 
-在任何 `.nu` 脚本运行之前，镜像里必须先有 `nushell`。
+`build.py` 只用标准库，除了 `python3` 之外不需要装任何东西，而 Fedora 基础镜像
+本身就带 `python3`。
 
-所以 `Containerfile` 仍需要一个较小的 bootstrap 步骤来：
+所以 `Containerfile` 的 bootstrap 只剩安装 rpmfusion（外加一句 `dnf install -y
+python3` 作为显式声明），之后直接从 `/tmp/build` 跑流水线。
 
-1. 安装 rpmfusion
-2. 启用 `atim/nushell` COPR
-3. 安装 `nushell`
-
-只有这样，后续主 repo / package / system 流程才能交给 Nu。
+用发行版自带的 `python3` 而不是某个 COPR 提供的解释器，bootstrap 就不依赖第三方
+仓库，镜像里也不会多一个只为构建服务的包。
 
 ---
 
@@ -282,28 +282,28 @@ RUN nu /tmp/build/scripts/build.nu /tmp/build
 ### 改包
 优先改：
 
-- `config/packages.nuon`
+- `config/packages.toml`
 
 ### 改仓库
 优先改：
 
-- `config/repos.nuon`
+- `config/repos.toml`
 
 ### 改额外 RPM 来源
 优先改：
 
-- `config/extras.nuon`
+- `config/extras.toml`
 
 ### 改系统服务或 flatpak remote
 优先改：
 
-- `config/system.nuon`
+- `config/system.toml`
 
 ### 改执行逻辑
 优先改：
 
-- `scripts/lib/*.nu`
-- `scripts/build.nu`
+- `scripts/lib/*.py`
+- `scripts/build.py`
 
 ---
 
@@ -335,7 +335,7 @@ sudo systemctl enable --now singbox.service
 每次改完配置，先运行：
 
 ```bash
-nu build/scripts/build.nu build --dry-run
+python3 build/scripts/build.py build --dry-run
 ```
 
 确认：

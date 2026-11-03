@@ -14,20 +14,20 @@ This repo builds an OCI image (`ghcr.io/star122013/fedora-niri-atomic:latest`) b
 ## Current Build Layout
 
 The repo no longer keeps all package/repo logic inline in `Containerfile`.
-Instead it uses **Nu + NUON** under `build/`.
+Instead it uses **Python + TOML** under `build/`.
 
 ### Key files
 
-- `Containerfile` — image build entrypoint; bootstraps `nushell`, copies `build/`, then runs the Nu build pipeline
-- `build/config/repos.nuon` — repo definitions: rpmfusion, terra, COPRs, priority overrides
-- `build/config/packages.nuon` — package groups, reinstall list, and remove list
-- `build/config/extras.nuon` — extra RPM URLs and GitHub latest-release RPMs
-- `build/config/system.nuon` — flatpak remotes and enabled systemd services
-- `build/scripts/build.nu` — top-level orchestrator
-- `build/scripts/lib/common.nu` — shared helpers
-- `build/scripts/lib/repos.nu` — repo stage logic
-- `build/scripts/lib/packages.nu` — package stage logic
-- `build/scripts/lib/system.nu` — flatpak/font/service/bootc logic
+- `Containerfile` — image build entrypoint; bootstraps `rpmfusion`, copies `build/`, then runs the Python build pipeline
+- `build/config/repos.toml` — repo definitions: rpmfusion, external repos, dnf setopt, COPR groups, priority overrides (arrays for lists, tables for name→value)
+- `build/config/packages.toml` — package groups (`[packages.groups]`, arrays of names), reinstall list, and remove list
+- `build/config/extras.toml` — extra RPM URLs and GitHub latest-release RPMs
+- `build/config/system.toml` — flatpak remotes and enabled systemd services
+- `build/scripts/build.py` — top-level orchestrator
+- `build/scripts/lib/common.py` — shared helpers
+- `build/scripts/lib/repos.py` — repo stage logic
+- `build/scripts/lib/packages.py` — package stage logic
+- `build/scripts/lib/system.py` — flatpak/font/service/bootc logic
 - `build/README.md` — detailed build subsystem documentation
 - `rootfs/` — files copied into the image with `COPY rootfs/ /`
 - `config.toml` — user/timezone/locale customization
@@ -36,16 +36,14 @@ Instead it uses **Nu + NUON** under `build/`.
 
 `Containerfile` does roughly this:
 
-1. bootstrap `rpmfusion`
-2. enable `atim/nushell`
-3. install `nushell`
-4. `COPY build /tmp/build`
-5. run:
+1. bootstrap `rpmfusion` (and `python3`, already in the base image)
+2. `COPY build /tmp/build`
+3. run:
    ```bash
-   nu /tmp/build/scripts/build.nu /tmp/build
+   python3 -B /tmp/build/scripts/build.py /tmp/build
    ```
 
-The Nu pipeline then runs three stages:
+The Python pipeline then runs three stages:
 
 1. **repo stage** — rpmfusion / terra / rawhide disable / COPR / repo priority
 2. **package stage** — install package groups / remove packages / extra RPMs
@@ -56,13 +54,13 @@ The Nu pipeline then runs three stages:
 ### Inspect config
 
 ```bash
-nu -c 'open build/config/repos.nuon | get copr.groups'
-nu -c 'open build/config/packages.nuon | get groups.desktop'
+python3 -c 'import tomllib; print(list(tomllib.load(open("build/config/repos.toml","rb"))["repos"]["copr"]))'
+python3 -c 'import tomllib; print(list(tomllib.load(open("build/config/packages.toml","rb"))["packages"]["groups"]["desktop"]))'
 ```
 
 ### `reinstall` mechanism
 
-When a package is pre-installed in the base image (e.g., `sway` from `fedora-sway-atomic`) and you want to replace it with a newer version from a COPR, add it to `reinstall` in `packages.nuon`. The pipeline will:
+When a package is pre-installed in the base image (e.g., `sway` from `fedora-sway-atomic`) and you want to replace it with a newer version from a COPR, add it to `reinstall` in `packages.toml`. The pipeline will:
 
 1. `dnf remove -y <package>` — uninstall the base image version
 2. `dnf install -y <package>` — install from the highest-priority repo (your COPR)
@@ -74,13 +72,13 @@ This is needed because `dnf install` on an already-installed package is a no-op,
 Always prefer dry-run after config changes:
 
 ```bash
-nu build/scripts/build.nu build --dry-run
+python3 build/scripts/build.py build --dry-run
 ```
 
 With zmx:
 
 ```bash
-zmx run system-oci -- nu build/scripts/build.nu build --dry-run
+zmx run system-oci -- python3 build/scripts/build.py build --dry-run
 ```
 
 ### Local image build
@@ -93,9 +91,9 @@ podman build -t fedora-niri-atomic:dev -f Containerfile .
 
 When modifying the build system:
 
-- prefer editing `build/config/*.nuon` for data changes
-- prefer editing `build/scripts/lib/*.nu` for logic changes
-- keep `build/scripts/build.nu` thin; it should stay as orchestration only
+- prefer editing `build/config/*.toml` for data changes
+- prefer editing `build/scripts/lib/*.py` for logic changes
+- keep `build/scripts/build.py` thin; it should stay as orchestration only
 - keep `Containerfile` focused on build entry/bootstrap, not large inline `dnf` logic
 - run a dry-run after changing build config or build logic
 
@@ -103,7 +101,7 @@ When modifying the build system:
 
 - COPR repositories are critical; many packages come from them
 - rawhide repos are explicitly disabled for stability
-- bootstrap of `nushell` in `Containerfile` is intentional and required
+- the build pipeline needs only `python3` from the base image (stdlib `tomllib` + `subprocess`, no venv, no third-party packages)
 - files under `/usr/lib/` are distro defaults, `/etc/` is mutable config, `/var/` is runtime state only
 
 ## CI

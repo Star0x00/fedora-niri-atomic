@@ -39,7 +39,7 @@ COPY build /tmp/build
 
 # ================================================================
 # Layer ordering strategy (stable -> changing) for better caching:
-#   L1  bootstrap (rpmfusion + nushell)
+#   L1  bootstrap (rpmfusion + python3)
 #   L2  repo stage (rpmfusion / terra / COPR / priority)
 #   L3  system group      (mesa)            -- foundational, rarely churn
 #   L4  fonts group       (noto)            -- stable
@@ -53,7 +53,8 @@ COPY build /tmp/build
 # only the layers after a change are rebuilt.
 # ================================================================
 
-# L1: bootstrap nushell, then let Nu orchestrate repos/packages/services.
+# L1: bootstrap rpmfusion; the pipeline itself only needs python3, which the
+# Fedora base image already ships (stdlib tomllib + subprocess, no venv).
 #
 # No mirrorlist pinning: the Fedora repos keep their `metalink=` and RPMFusion
 # is installed from its official release RPM, so dnf asks MirrorManager for the
@@ -62,31 +63,30 @@ COPY build /tmp/build
 RUN set -eux; \
     dnf install -y \
       'dnf5-command(copr)' \
+      python3 \
       "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
       "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"; \
-    dnf copr enable -y atim/nushell; \
-    dnf install -y nushell; \
     dnf clean all
 
 # L2: repo stage
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage repo
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage repo
 
 # L3-L8: install package groups, stable first
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group system
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group fonts
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group services
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group utils
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group desktop
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage packages --group gaming
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group system
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group fonts
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group services
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group utils
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group desktop
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage packages --group gaming
 
 # L9: removals / reinstalls / static & github-latest RPMs / font download + clean
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage finalize
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage finalize
 
 # pre-copy custom systemd units so systemctl enable can find them
 COPY rootfs/usr/lib/systemd/system/ /usr/lib/systemd/system/
 
 # L10: flatpak remotes / font cache / systemd services / bootc lint
-RUN nu /tmp/build/scripts/build.nu /tmp/build --stage system
+RUN python3 -B /tmp/build/scripts/build.py /tmp/build --stage system
 
 # re-apply rootfs after package install so RPM-shipped /etc defaults
 # (e.g. dae's empty /etc/dae/config.dae) do not clobber our config

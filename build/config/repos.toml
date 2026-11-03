@@ -1,0 +1,53 @@
+# Repo definitions: rpmfusion release RPMs, external repo files, dnf
+# config-manager options, COPR groups, and priority overrides.
+
+[repos]
+
+# rpmfusion release RPMs; {fedora} is replaced with `rpm -E %fedora`
+rpmfusion = [
+  'https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-{fedora}.noarch.rpm',
+  'https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-{fedora}.noarch.rpm',
+]
+
+# repo files added via `dnf config-manager addrepo --from-repofile=<url>`
+external = [
+  'https://codeberg.org/api/packages/GramEditor/rpm.repo',
+]
+
+# `dnf config-manager setopt <key>=<value>`
+setopt = [
+  'fedora-cisco-openh264.enabled=1',
+  # GramEditor RPM package signing is not functional yet; must disable
+  # signature check for this repo only.
+  'gitea-grameditor.gpgcheck=0',
+]
+
+# repo files disabled with `sed s/^enabled=1/enabled=0/`; entries are globs
+disable_glob = [
+  '*rawhide*',
+]
+
+# COPR projects per group, enabled in key order.
+[repos.copr.groups]
+kernel = []
+
+desktop = [
+  'qwerhyy/misc-packages',
+  'lionheartp/Hyprland',
+  'yalter/niri',
+  'quadratech188/vicinae',
+  'hazel-bunny/ricing',
+  'matinlotfali/KDE-Rounded-Corners',
+  'imput/helium',
+]
+
+utils = [
+  'peterwu/rendezvous',
+  'jdxcode/mise',
+]
+
+# Appended as `priority=N` to the generated /etc/yum.repos.d/_copr:*.repo file.
+[repos.copr.priority]
+'qwerhyy/misc-packages' = 1
+'lionheartp/Hyprland' = 1
+'yalter/niri' = 1

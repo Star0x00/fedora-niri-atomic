@@ -59,10 +59,24 @@ def dnf_clean(dry_run: bool) -> None:
     run_cmd(dry_run, "dnf", ["clean", "all"])
 
 
+def ensure_opt_is_dir(dry_run: bool) -> None:
+    """Turn /opt into a plain directory.
+
+    The base image ships /opt as a symlink to var/opt, which does not exist, so
+    rpm cannot unpack packages that install into /opt. With composefs enabled
+    /opt is read-only at runtime and lifecycled with the image, which is what
+    the ostree docs recommend for such packages.
+    """
+    if Path("/opt").is_symlink():
+        run_cmd(dry_run, "rm", ["-f", "/opt"])
+        run_cmd(dry_run, "mkdir", ["-p", "/opt"])
+
+
 def dnf_install_lean(dry_run: bool, packages: Sequence[str]) -> None:
     if not packages:
         return
 
+    ensure_opt_is_dir(dry_run)
     print(f"  package-count: {len(packages)}")
     print_bullets(packages)
     run_cmd(

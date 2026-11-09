@@ -9,8 +9,6 @@ reinstall = []
 remove = [
   'firefox',
   'firefox-langpacks',
-  # X11 apps video bridge; nothing requires it, unused on a niri/plasma-wayland desktop
-  'xwaylandvideobridge',
   # base image (fedora-bootc:44) ships nfs-utils and preset-enables
   # nfs-client.target; drop the whole NFS/RPC family since nothing
   # else depends on it (no NFS shares are mounted here).
@@ -85,6 +83,8 @@ utils = [
   # graphics / system
   'vulkan-tools',
   'xdg-utils',
+  "glibc-devel",
+  "gcc",
   'glibc-langpack-en',
   'mise',
   'pass',
@@ -106,8 +106,6 @@ desktop = [
   'bibata-cursor-theme',
   'colloid-gtk-theme',
   'adw-gtk3-theme',
-  'klassy',
-  'kwin-effect-roundcorners',
   # file managers
   'nautilus',
   # desktop portals

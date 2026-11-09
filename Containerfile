@@ -10,30 +10,8 @@
 #   /etc/       — mutable admin config (containers policy, skel, locale)
 #   /var/       — runtime state only; never ship files here; use tmpfiles.d
 # ================================================================
-# stage 1 use fedora build some software
-# maple fonts
-# FROM alpine AS fonts-downloader
 
-# RUN apk add --no-cache curl jq unzip
-
-# WORKDIR /fonts
-
-# RUN set -e; \
-#   download_and_unzip() { \
-#   local repo=$1 file=$2 dest=$3; \
-#   local tag=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" | jq -r ".tag_name"); \
-#   echo "Downloading ${repo} ${tag}..."; \
-#   curl -L "https://github.com/${repo}/releases/download/${tag}/${file}" -o "/tmp/${file}"; \
-#   mkdir -p "${dest}"; \
-#   unzip -q "/tmp/${file}" -d "${dest}"; \
-#   rm "/tmp/${file}"; \
-#   }; \
-#   download_and_unzip "subframe7536/maple-font" "MapleMono-NF-CN.zip" "maple-mono-nf-cn" && \
-#   download_and_unzip "ryanoasis/nerd-fonts" "NerdFontsSymbolsOnly.zip" "nerd-fonts-symbols-only"
-
-
-# stage 2 make system container
-FROM quay.io/fedora/fedora-kinoite:45
+FROM quay.io/fedora/fedora-silverblue:45
 
 COPY build /tmp/build
 

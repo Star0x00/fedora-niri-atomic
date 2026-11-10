@@ -131,7 +131,6 @@ desktop = [
   'flatpak',
   'vicinae',
   'gram',
-  'helium-bin',
 ]
 
 gaming = []

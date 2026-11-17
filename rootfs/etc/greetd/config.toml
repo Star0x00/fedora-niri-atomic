@@ -1,0 +1,17 @@
+# greetd configuration (Fedora ships a default agreety config; this replaces
+# it with the noctalia greeter). Keep in sync with:
+#   - build/config/packages.toml  (greetd, noctalia-greeter)
+#   - build/config/system.toml    (greetd.service enabled)
+#   - rootfs/usr/lib/tmpfiles.d/bootc-var-dirs.conf (/var/lib/{greetd,noctalia-greeter})
+
+[terminal]
+vt = 1
+
+[default_session]
+# greetd must launch the session wrapper, not the greeter binary; the wrapper
+# starts the bundled wlroots compositor and the greeter inside it.
+# `--session niri` picks the default entry from /usr/share/wayland-sessions
+# (the .desktop filename is accepted as a case-insensitive fallback).
+command = "/usr/bin/noctalia-greeter-session -- --session niri"
+# Fedora's greetd package creates this account via /usr/lib/sysusers.d/greetd.conf
+user = "greetd"

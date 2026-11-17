@@ -6,6 +6,9 @@ flathub = 'https://dl.flathub.org/repo/flathub.flatpakrepo'
 
 [system.services]
 enable = [
+  # display manager (greetd + noctalia greeter); greetd.service carries the
+  # display-manager.service alias
+  'greetd.service',
   'bluetooth.service',
   'avahi-daemon.service',
   'fedora-repair-passwd.service',

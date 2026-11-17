@@ -73,6 +73,7 @@ services = [
   'iwlwifi-mvm-firmware',
   # system daemons
   'upower',
+  'bluez',
 ]
 
 # CLI / dev / container tooling
@@ -100,6 +101,10 @@ utils = [
 
 # GUI session, changes most often (cached worst)
 desktop = [
+  # display manager: greetd + noctalia greeter (fedora-bootc ships none).
+  # noctalia-greeter-git comes from the lionheartp/Hyprland COPR.
+  'greetd',
+  'noctalia-greeter-git',
   # window managers
   'niri',
   'labwc',

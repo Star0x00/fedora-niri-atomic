@@ -38,6 +38,7 @@ remove = [
 # foundational, very rarely churn (cached best)
 system = [
   'mesa-vulkan-drivers',
+  'dbus-tools',
 ]
 
 fonts = [
@@ -110,8 +111,6 @@ desktop = [
   'pam_oo7',
   # window managers
   'niri',
-  'labwc',
-  'labwc-session',
   # theme
   'bibata-cursor-theme',
   'colloid-gtk-theme',

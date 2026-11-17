@@ -11,7 +11,7 @@
 #   /var/       — runtime state only; never ship files here; use tmpfiles.d
 # ================================================================
 
-FROM quay.io/fedora/fedora-silverblue:45
+FROM quay.io/fedora/fedora-bootc:45
 
 COPY build /tmp/build
 

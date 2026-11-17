@@ -102,6 +102,7 @@ utils = [
 desktop = [
   # window managers
   'niri',
+  'labwc',
   # theme
   'bibata-cursor-theme',
   'colloid-gtk-theme',

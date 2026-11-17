@@ -105,9 +105,13 @@ desktop = [
   # noctalia-greeter-git comes from the lionheartp/Hyprland COPR.
   'greetd',
   'noctalia-greeter-git',
+  # (needed by chromium/helium's "Chrome Safe Storage" key).
+  'oo7-daemon',
+  'pam_oo7',
   # window managers
   'niri',
   'labwc',
+  'labwc-session',
   # theme
   'bibata-cursor-theme',
   'colloid-gtk-theme',

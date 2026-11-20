@@ -9,6 +9,12 @@
 [extras.github_latest]
 'flectar-mail' = { repo = 'flectar/mail', version_prefix_to_strip = 'v', url_template = 'https://github.com/flectar/mail/releases/download/{tag}/flectar-mail-{version}-linux-x64.rpm' }
 'Throne' = { repo = 'throneproj/Throne', version_prefix_to_strip = 'v', url_template = 'https://github.com/throneproj/Throne/releases/download/{tag}/Throne-{version}-fedora-amd64-system-qt.rpm' }
+# dae (eBPF transparent proxy). Upstream rpm ships /usr/bin/dae, the
+# dae.service unit, /usr/share/dae/geo{ip,site}.dat and /etc/dae/example.dae.
+# The asset name carries no version, so no version substitution is needed.
+# dae.service is deliberately NOT enabled: it needs a user-supplied
+# /etc/dae/config.dae and fails validation without one.
+'dae' = { repo = 'daeuniverse/dae', url_template = 'https://github.com/daeuniverse/dae/releases/download/{tag}/dae-linux-x86_64.rpm' }
 
 # Fonts downloaded from a direct URL (not RPMs). url can point to a plain
 # .ttf/.otf file OR an archive (.zip / .tar.gz / .tar.xz / .tar.bz2 / .7z);

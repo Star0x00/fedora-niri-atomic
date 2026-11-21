@@ -64,6 +64,8 @@ routing {
     # ── 基础设施直连（避免回环） ──
     # sing-box 的代理出站流量不能走 dae TProxy，否则会回环到自身
     pname(sing-box) -> must_direct
+    pname(Throne) -> must_direct
+    pname(ThroneCore) -> must_direct
     pname(aardvark-dns) -> must_direct
     pname(systemd-networkd, NetworkManager) -> must_direct
     pname(conmon, netavark) -> must_direct

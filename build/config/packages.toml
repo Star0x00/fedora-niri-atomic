@@ -25,10 +25,7 @@ remove = [
   'gssproxy',
   'quota',
   'quota-nls',
-  # zram swap is not wanted. zram-generator-defaults ships the default
-  # /usr/lib/systemd/zram-generator.conf that creates /dev/zram0; the
-  # defaults package Requires the generator, so both go together.
-  # Disk swap (/dev/nvme0n1p3, 32G) remains available.
+  # zram swap is not needed.
   'zram-generator',
   'zram-generator-defaults',
 ]

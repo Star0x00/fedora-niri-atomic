@@ -1,9 +1,10 @@
 # vim: set filetype=dockerfile
 # ================================================================
-# Fedora 45 with bootc
+# Fedora 45 Kinoite with bootc
 # https://bootc.dev/bootc/
-# Philosophy: the image provides hardware support + a working
-# niri session.
+# Philosophy: the image provides hardware support (Fedora KDE Atomic
+# base) + a working niri session, with greetd instead of
+# plasma-login-manager as the display manager.
 #
 # File placement rules (bootc):
 #   /usr/lib/   — read-only distro defaults (modprobe.d, dracut, systemd, sddm)
@@ -11,7 +12,7 @@
 #   /var/       — runtime state only; never ship files here; use tmpfiles.d
 # ================================================================
 
-FROM quay.io/fedora/fedora-bootc:45
+FROM quay.io/fedora/fedora-kinoite:45
 
 COPY build /tmp/build
 
@@ -32,7 +33,7 @@ COPY build /tmp/build
 # ================================================================
 
 # L1: bootstrap rpmfusion; the pipeline itself only needs python3, which the
-# Fedora base image already ships (stdlib tomllib + subprocess, no venv).
+# Fedora Kinoite base image already ships (stdlib tomllib + subprocess, no venv).
 #
 # No mirrorlist pinning: the Fedora repos keep their `metalink=` and RPMFusion
 # is installed from its official release RPM, so dnf asks MirrorManager for the

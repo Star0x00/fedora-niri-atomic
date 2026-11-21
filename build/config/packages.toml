@@ -100,10 +100,9 @@ utils = [
   'zsh',
   'flow',
   # Nix: /nix comes from the nix-filesystem RPM, the store itself is bind
-  # mounted from /var/nix by rootfs/usr/lib/systemd/system/nix-prepare.service
-  # because / is a read-only composefs overlay on bootc.
   'nix',
   'nix-daemon',
+  'busybox',
 ]
 
 # GUI session, changes most often (cached worst)
@@ -122,8 +121,6 @@ desktop = [
   'bibata-cursor-theme',
   'colloid-gtk-theme',
   'adw-gtk3-theme',
-  'orchis-kde',
-  'orchis-gtk-theme',
   'klassy',
   'plasma-union',
   # file managers

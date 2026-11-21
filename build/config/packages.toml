@@ -9,7 +9,14 @@ reinstall = []
 remove = [
   'firefox',
   'firefox-langpacks',
-  # base image (fedora-bootc:44) ships nfs-utils and preset-enables
+  # Kinoite base ships plasma-login-manager as its display manager. This image
+  # uses greetd instead (greetd.service carries the display-manager.service
+  # alias, which `systemctl enable greetd.service` re-creates after the removal
+  # below drops plasmalogin's alias). Nothing else depends on these.
+  'plasma-login-manager',
+  'kcm-plasmalogin',
+  'kde-settings-plasmalogin',
+  # base image ships nfs-utils and preset-enables
   # nfs-client.target; drop the whole NFS/RPC family since nothing
   # else depends on it (no NFS shares are mounted here).
   'nfs-utils',
@@ -102,7 +109,8 @@ utils = [
 
 # GUI session, changes most often (cached worst)
 desktop = [
-  # display manager: greetd + noctalia greeter (fedora-bootc ships none).
+  # display manager: greetd + noctalia greeter (Kinoite's plasma-login-manager
+  # is removed in the finalize stage).
   # noctalia-greeter-git comes from the lionheartp/Hyprland COPR.
   'greetd',
   'noctalia-greeter-git',

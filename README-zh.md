@@ -6,7 +6,7 @@
 
 当前目标大致是：
 
-- 以 `quay.io/fedora/fedora-kinoite:44` 为基础
+- 以 `quay.io/fedora/fedora-kinoite:45`（Fedora KDE Atomic）为基础
 - 提供一个可用的 Wayland 桌面环境
 - 保留部分 Hyprland / KDE 生态软件
 - 用 `Containerfile + Python + TOML` 管理仓库、软件包和系统配置

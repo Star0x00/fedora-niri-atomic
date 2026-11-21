@@ -6,7 +6,7 @@ A personal Fedora Atomic desktop image repository built on [bootc](https://bootc
 
 The current goals are roughly:
 
-- base the image on `quay.io/fedora/fedora-kinoite:44`
+- base the image on `quay.io/fedora/fedora-kinoite:45` (Fedora KDE Atomic),
 - provide a usable Wayland desktop environment
 - keep parts of the Hyprland / KDE ecosystem available
 - manage repos, packages, and system configuration with `Containerfile + Python + TOML`

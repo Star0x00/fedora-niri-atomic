@@ -9,13 +9,10 @@ reinstall = []
 remove = [
   'firefox',
   'firefox-langpacks',
-  # Kinoite base ships plasma-login-manager as its display manager. This image
-  # uses greetd instead (greetd.service carries the display-manager.service
-  # alias, which `systemctl enable greetd.service` re-creates after the removal
-  # below drops plasmalogin's alias). Nothing else depends on these.
   'plasma-login-manager',
   'kcm-plasmalogin',
   'kde-settings-plasmalogin',
+  'xwaylandvideobridge',
   # base image ships nfs-utils and preset-enables
   # nfs-client.target; drop the whole NFS/RPC family since nothing
   # else depends on it (no NFS shares are mounted here).
@@ -123,6 +120,10 @@ desktop = [
   'bibata-cursor-theme',
   'colloid-gtk-theme',
   'adw-gtk3-theme',
+  'orchis-kde',
+  'orchis-gtk-theme',
+  'klassy',
+  'plasma-union',
   # file managers
   'nautilus',
   # desktop portals
@@ -148,6 +149,8 @@ desktop = [
   'flatpak',
   'vicinae',
   'gram',
+  'qt6ct',
+  'kvantum',
 ]
 
 gaming = []

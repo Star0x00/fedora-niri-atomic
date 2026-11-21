@@ -13,6 +13,12 @@ enable = [
   'avahi-daemon.service',
   'fedora-repair-passwd.service',
   'plasmalogin-shadow-fix.service',
+  # Bind mounts /var/nix on /nix before tmpfiles.d runs (root is a read-only
+  # composefs overlay, and /var from the image is not applied on upgrades).
+  # Runs before sysinit.target, so it is always up before nix-daemon.socket.
+  'nix-prepare.service',
+  # Nix multi-user store; socket-activated.
+  'nix-daemon.socket',
 ]
 
 disable = [

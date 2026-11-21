@@ -1,0 +1,40 @@
+[Unit]
+# Nix store on the writable /var.
+#
+# Why this unit exists:
+#   Nix's store path /nix/store is compiled into every binary and Nix refuses
+#   a symlinked /nix. On bootc / is a read-only composefs overlay, so /nix
+#   cannot be written at runtime. /var is the only persistent writable place,
+#   so the store lives in /var/nix and is bind mounted on /nix.
+#
+#   systemd is the thing doing the mount (this is a plain bind mount, no
+#   helper script), and it also owns the directory creation so nothing needs
+#   a tmpfiles.d override in /etc:
+#
+#     - the mkdir covers /var/nix itself, which cannot come from the image
+#       (content in /var from the image is only applied on first
+#       provisioning, so existing machines would not get it);
+#     - it runs *before* systemd-tmpfiles-setup.service, so the packaged
+#       tmpfiles entries for /nix/var/nix/{daemon-socket,builds}
+#       (nix-filesystem, nix-daemon) execute against the mounted, writable
+#       store instead of failing with EROFS on the read-only root.
+#
+#   That ordering also satisfies nix-daemon.service / nix-daemon.socket,
+#   which both carry ConditionPathIsReadWrite=/nix/var/nix/daemon-socket.
+Description=Prepare /nix (bind mount /var/nix on /nix)
+Documentation=man:mount(8) https://nixos.org/manual/nix/stable/installation/multi-user
+DefaultDependencies=no
+RequiresMountsFor=/var
+After=local-fs.target
+Before=systemd-tmpfiles-setup.service sysinit.target shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/mkdir -p /var/nix/store /var/nix/var/log/nix /var/nix/var/nix/db /var/nix/var/nix/daemon-socket /var/nix/var/nix/builds /var/nix/var/nix/profiles /var/nix/var/nix/gcroots /var/nix/var/nix/temproots
+ExecStart=/usr/bin/mount --bind /var/nix /nix
+ExecStop=/usr/bin/umount /nix
+
+[Install]
+WantedBy=sysinit.target

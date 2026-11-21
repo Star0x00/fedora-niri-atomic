@@ -102,6 +102,11 @@ utils = [
   'gtk-murrine-engine',
   'zsh',
   'flow',
+  # Nix: /nix comes from the nix-filesystem RPM, the store itself is bind
+  # mounted from /var/nix by rootfs/usr/lib/systemd/system/nix-prepare.service
+  # because / is a read-only composefs overlay on bootc.
+  'nix',
+  'nix-daemon',
 ]
 
 # GUI session, changes most often (cached worst)
